@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tinyURL — URL Shortener</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --text-secondary: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --border: #d2d2d7;
+    --danger: #ff3b30;
+    --success: #34c759;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow: 0 2px 12px rgba(0,0,0,.08);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,.12);
+    --transition: .25s cubic-bezier(.4,0,.2,1);
+    --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+             'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+
+  /* ── NAV ─────────────────────────────── */
+  nav {
+    position: sticky; top:0; z-index:100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; height: 52px;
+    background: rgba(250,250,250,.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: .5px solid var(--border);
+  }
+  .nav-brand { font-size: 18px; font-weight: 600; letter-spacing: -.02em; }
+  .nav-brand span { color: var(--accent); }
+  .nav-actions { display: flex; gap: 10px; align-items: center; }
+  .nav-user { font-size: 13px; color: var(--text-secondary); margin-right: 6px; }
+
+  /* ── BUTTONS ─────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    font: 400 14px/1 var(--font); letter-spacing: -.01em;
+    border: none; cursor: pointer; border-radius: 980px;
+    padding: 8px 18px; transition: all var(--transition);
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color:#fff; }
+  .btn-primary:hover { background: var(--accent-hover); transform: scale(1.02); }
+  .btn-secondary { background: transparent; color: var(--accent); }
+  .btn-secondary:hover { background: rgba(0,113,227,.08); }
+  .btn-danger { background: transparent; color: var(--danger); font-size:13px; }
+  .btn-danger:hover { background: rgba(255,59,48,.08); }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+  .btn:disabled { opacity: .4; pointer-events: none; }
+
+  /* ── INPUTS ──────────────────────────── */
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-group label {
+    font-size: 12px; font-weight: 500; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  input[type="text"], input[type="email"], input[type="password"], input[type="url"] {
+    font: 400 16px var(--font);
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--text);
+    outline: none;
+    transition: border var(--transition), box-shadow var(--transition);
+    width: 100%;
+  }
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,113,227,.15);
+  }
+  input::placeholder { color: #c7c7cc; }
+
+  /* ── LAYOUT ──────────────────────────── */
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── HERO ────────────────────────────── */
+  .hero {
+    text-align: center;
+    margin-bottom: 44px;
+  }
+  .hero h1 {
+    font-size: 44px; font-weight: 700; letter-spacing: -.03em;
+    line-height: 1.08;
+    margin-bottom: 12px;
+  }
+  .hero p {
+    font-size: 18px; color: var(--text-secondary);
+    font-weight: 400; letter-spacing: -.01em;
+    max-width: 420px; margin: 0 auto;
+  }
+
+  /* ── CARD ────────────────────────────── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 32px;
+    margin-bottom: 24px;
+    transition: box-shadow var(--transition);
+  }
+  .card:hover { box-shadow: var(--shadow-lg); }
+  .card-title {
+    font-size: 20px; font-weight: 600; letter-spacing: -.02em;
+    margin-bottom: 20px;
+  }
+  .card-form { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── SHORTEN RESULT ──────────────────── */
+  .result-box {
+    display: none;
+    background: #f5f5f7;
+    border-radius: var(--radius-sm);
+    padding: 18px 20px;
+    margin-top: 16px;
+    animation: fadeUp .35s ease;
+  }
+  .result-box.visible { display: block; }
+  .result-url {
+    font-size: 18px; font-weight: 600; color: var(--accent);
+    word-break: break-all; cursor: pointer;
+    transition: opacity var(--transition);
+  }
+  .result-url:hover { opacity: .7; }
+  .result-meta {
+    font-size: 12px; color: var(--text-secondary);
+    margin-top: 6px;
+  }
+  .copied-badge {
+    display: inline-block; font-size: 12px; font-weight: 500;
+    color: var(--success); margin-left: 8px;
+    opacity: 0; transition: opacity .2s;
+  }
+  .copied-badge.show { opacity: 1; }
+
+  /* ── LINK LIST ───────────────────────── */
+  .links-section { display: none; }
+  .links-section.visible { display: block; }
+  .link-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: .5px solid #e8e8ed;
+    gap: 12px;
+    animation: fadeUp .3s ease;
+  }
+  .link-item:last-child { border-bottom: none; }
+  .link-info { flex: 1; min-width: 0; }
+  .link-short {
+    font-size: 15px; font-weight: 600; color: var(--accent);
+    text-decoration: none; word-break: break-all;
+  }
+  .link-short:hover { text-decoration: underline; }
+  .link-original {
+    font-size: 13px; color: var(--text-secondary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .link-stats {
+    display: flex; gap: 16px; align-items: center;
+    flex-shrink: 0;
+  }
+  .stat {
+    text-align: center; min-width: 48px;
+  }
+  .stat-num {
+    font-size: 18px; font-weight: 600; letter-spacing: -.02em;
+  }
+  .stat-label {
+    font-size: 10px; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+
+  /* ── AUTH MODAL ──────────────────────── */
+  .overlay {
+    display: none; position: fixed; inset:0; z-index: 200;
+    background: rgba(0,0,0,.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: center; justify-content: center;
+  }
+  .overlay.visible { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 18px;
+    padding: 36px 32px;
+    width: 380px; max-width: 90vw;
+    box-shadow: var(--shadow-lg);
+    animation: fadeUp .3s ease;
+  }
+  .modal h2 {
+    font-size: 24px; font-weight: 700; letter-spacing: -.02em;
+    text-align: center; margin-bottom: 24px;
+  }
+  .modal-switch {
+    text-align: center; margin-top: 16px;
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .modal-switch a {
+    color: var(--accent); text-decoration: none; font-weight: 500; cursor: pointer;
+  }
+
+  /* ── ERROR / TOAST ───────────────────── */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: #fff;
+    padding: 12px 24px; border-radius: 980px;
+    font-size: 14px; font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s, transform .3s;
+    z-index: 999;
+  }
+  .toast.show { opacity:1; pointer-events:auto; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--danger); }
+
+  /* ── EXPAND ROW ──────────────────────── */
+  .expand-row { display: none; padding: 12px 0 4px; animation: fadeUp .2s ease; }
+  .expand-row.visible { display: block; }
+  .expand-row .input-group { margin-bottom: 10px; }
+
+  /* ── ANIMATIONS ──────────────────────── */
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(10px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── RESPONSIVE ──────────────────────── */
+  @media (max-width: 520px) {
+    nav { padding: 0 20px; }
+    .container { padding: 32px 16px 60px; }
+    .hero h1 { font-size: 32px; }
+    .hero p { font-size: 16px; }
+    .card { padding: 24px 20px; }
+    .modal { padding: 28px 24px; }
+    .link-stats { gap: 10px; }
+  }
+
+  /* ── SKELETON ─────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px; height: 16px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  .empty-state {
+    text-align: center; padding: 40px 0;
+    color: var(--text-secondary); font-size: 15px;
+  }
+
+  .options-row {
+    display: flex; gap: 12px;
+  }
+  .options-row .input-group { flex:1; }
+
+  @media (max-width:520px) {
+    .options-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAVIGATION ─────────────────────── -->
+<nav>
+  <div class="nav-brand">tiny<span>URL</span></div>
+  <div class="nav-actions">
+    <span class="nav-user" id="navUser"></span>
+    <button class="btn btn-secondary btn-sm" id="btnAuth" onclick="showAuth('login')">Sign In</button>
+    <button class="btn btn-secondary btn-sm" id="btnLogout" style="display:none" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- ── MAIN CONTENT ───────────────────── -->
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>Shorten any link</h1>
+    <p>Clean, fast, and trackable. Paste a URL and get an elegant short link.</p>
+  </div>
+
+  <!-- Shorten Card -->
+  <div class="card">
+    <div class="card-form">
+      <div class="input-group">
+        <label>Destination URL</label>
+        <input type="url" id="inputUrl" placeholder="https://example.com/your-very-long-url">
+      </div>
+      <div class="options-row">
+        <div class="input-group">
+          <label>Custom Alias <span style="text-transform:none;font-weight:400">(optional)</span></label>
+          <input type="text" id="inputAlias" placeholder="my-link">
+        </div>
+        <div class="input-group">
+          <label>Category <span style="text-transform:none;font-weight:400">(optional)</span></label>
+          <input type="text" id="inputCategory" placeholder="marketing">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btnShorten" onclick="shortenUrl()">Shorten</button>
+    </div>
+    <div class="result-box" id="resultBox">
+      <div class="result-url" id="resultUrl" onclick="copyResult()"></div>
+      <span class="copied-badge" id="copiedBadge">Copied!</span>
+      <div class="result-meta" id="resultMeta"></div>
+    </div>
+  </div>
+
+  <!-- My Links (authed) -->
+  <div class="links-section" id="linksSection">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div class="card-title" style="margin:0">My Links</div>
+        <button class="btn btn-secondary btn-sm" onclick="loadMyLinks()">Refresh</button>
+      </div>
+      <div id="linksList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── AUTH MODAL ──────────────────────── -->
+<div class="overlay" id="authOverlay" onclick="if(event.target===this)closeAuth()">
+  <div class="modal">
+    <!-- Login -->
+    <div id="loginForm">
+      <h2>Welcome back</h2>
+      <div class="card-form">
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com">
+        </div>
+        <div class="input-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+      </div>
+      <div class="modal-switch">Don't have an account? <a onclick="showAuth('register')">Create one</a></div>
+    </div>
+    <!-- Register -->
+    <div id="registerForm" style="display:none">
+      <h2>Create account</h2>
+      <div class="card-form">
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="you@example.com">
+        </div>
+        <div class="input-group">
+          <label>Password</label>
+          <input type="password" id="regPassword" placeholder="Min 6 characters" onkeydown="if(event.key==='Enter')doRegister()">
+        </div>
+        <button class="btn btn-primary" onclick="doRegister()">Create Account</button>
+      </div>
+      <div class="modal-switch">Already have an account? <a onclick="showAuth('login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ───────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.location.origin;
+let token = localStorage.getItem('token');
+let userEmail = localStorage.getItem('userEmail');
+
+// ── INIT ────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  updateAuthUI();
+  if (token) loadMyLinks();
+});
+
+// ── AUTH UI ─────────────────────────────
+function updateAuthUI() {
+  const btnAuth = document.getElementById('btnAuth');
+  const btnLogout = document.getElementById('btnLogout');
+  const navUser = document.getElementById('navUser');
+  const linksSection = document.getElementById('linksSection');
+
+  if (token) {
+    btnAuth.style.display = 'none';
+    btnLogout.style.display = '';
+    navUser.textContent = userEmail || '';
+    linksSection.classList.add('visible');
+  } else {
+    btnAuth.style.display = '';
+    btnLogout.style.display = 'none';
+    navUser.textContent = '';
+    linksSection.classList.remove('visible');
+  }
+}
+
+function showAuth(mode) {
+  document.getElementById('authOverlay').classList.add('visible');
+  document.getElementById('loginForm').style.display = mode === 'login' ? '' : 'none';
+  document.getElementById('registerForm').style.display = mode === 'register' ? '' : 'none';
+}
+
+function closeAuth() {
+  document.getElementById('authOverlay').classList.remove('visible');
+}
+
+// ── LOGIN ───────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) return toast('Fill in all fields', true);
+
+  const body = new URLSearchParams({ username: email, password });
+  try {
+    const r = await fetch(`${API}/auth/jwt/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Login failed'); }
+    const data = await r.json();
+    token = data.access_token;
+    userEmail = email;
+    localStorage.setItem('token', token);
+    localStorage.setItem('userEmail', email);
+    closeAuth();
+    updateAuthUI();
+    loadMyLinks();
+    toast('Signed in');
+  } catch (e) { toast(e.message, true); }
+}
+
+// ── REGISTER ────────────────────────────
+async function doRegister() {
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  if (!email || !password) return toast('Fill in all fields', true);
+  if (password.length < 6) return toast('Password must be at least 6 characters', true);
+
+  try {
+    const r = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (!r.ok) {
+      const e = await r.json();
+      const msg = e.detail === 'REGISTER_USER_ALREADY_EXISTS' ? 'Email already registered' : (e.detail?.reason || e.detail || 'Registration failed');
+      throw new Error(msg);
+    }
+    toast('Account created — signing in…');
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = password;
+    await doLogin();
+  } catch (e) { toast(e.message, true); }
+}
+
+// ── LOGOUT ──────────────────────────────
+function logout() {
+  token = null;
+  userEmail = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('userEmail');
+  updateAuthUI();
+  document.getElementById('linksList').innerHTML = '';
+  toast('Signed out');
+}
+
+// ── SHORTEN ─────────────────────────────
+async function shortenUrl() {
+  const url = document.getElementById('inputUrl').value.trim();
+  if (!url) return toast('Enter a URL', true);
+
+  const payload = { original_url: url };
+  const alias = document.getElementById('inputAlias').value.trim();
+  const category = document.getElementById('inputCategory').value.trim();
+  if (alias) payload.custom_alias = alias;
+  if (category) payload.category = category;
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const btn = document.getElementById('btnShorten');
+  btn.disabled = true; btn.textContent = 'Shortening…';
+
+  try {
+    const r = await fetch(`${API}/links/shorten`, {
+      method: 'POST', headers, body: JSON.stringify(payload)
+    });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Failed'); }
+    const link = await r.json();
+
+    const box = document.getElementById('resultBox');
+    document.getElementById('resultUrl').textContent = link.short_url;
+    document.getElementById('resultMeta').textContent =
+      `Redirects to ${link.original_url.length > 60 ? link.original_url.slice(0,60)+'…' : link.original_url}`;
+    box.classList.add('visible');
+
+    if (token) loadMyLinks();
+  } catch (e) { toast(e.message, true); }
+  finally { btn.disabled = false; btn.textContent = 'Shorten'; }
+}
+
+// ── COPY ────────────────────────────────
+function copyResult() {
+  const text = document.getElementById('resultUrl').textContent;
+  navigator.clipboard.writeText(text);
+  const badge = document.getElementById('copiedBadge');
+  badge.classList.add('show');
+  setTimeout(() => badge.classList.remove('show'), 1500);
+}
+
+// ── MY LINKS ────────────────────────────
+async function loadMyLinks() {
+  if (!token) return;
+  const list = document.getElementById('linksList');
+  list.innerHTML = '<div class="skeleton" style="width:70%;height:14px;margin-bottom:12px"></div><div class="skeleton" style="width:50%;height:14px"></div>';
+
+  try {
+    const r = await fetch(`${API}/links/user/my-links`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (r.status === 401) { logout(); return; }
+    if (!r.ok) throw new Error('Failed to load links');
+    const links = await r.json();
+
+    if (!links.length) {
+      list.innerHTML = '<div class="empty-state">No links yet. Shorten one above!</div>';
+      return;
+    }
+
+    list.innerHTML = links.map(link => `
+      <div class="link-item" id="item-${link.short_code}">
+        <div class="link-info">
+          <a class="link-short" href="${link.short_url}" target="_blank">${link.short_url.replace('https://','')}</a>
+          <div class="link-original">${link.original_url}</div>
+        </div>
+        <div class="link-stats">
+          <div class="stat">
+            <div class="stat-num">${link.click_count}</div>
+            <div class="stat-label">clicks</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteLink('${link.short_code}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state" style="color:var(--danger)">${e.message}</div>`;
+  }
+}
+
+// ── DELETE LINK ─────────────────────────
+async function deleteLink(code) {
+  if (!confirm('Delete this link?')) return;
+  try {
+    const r = await fetch(`${API}/links/${code}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!r.ok && r.status !== 204) { const e = await r.json(); throw new Error(e.detail || 'Failed'); }
+    const item = document.getElementById(`item-${code}`);
+    if (item) { item.style.opacity = '0'; item.style.transform = 'translateX(20px)';
+      item.style.transition = '.3s ease'; setTimeout(() => { item.remove(); }, 300); }
+    toast('Link deleted');
+  } catch (e) { toast(e.message, true); }
+}
+
+// ── TOAST ───────────────────────────────
+let toastTimer;
+function toast(msg, isError) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = 'toast', 2500);
+}
+</script>
+</body>
+</html>

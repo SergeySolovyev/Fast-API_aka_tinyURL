@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from src.config import REDIS_URL, APP_HOST, APP_PORT
@@ -52,10 +55,20 @@ app.include_router(
 # Main application routes
 app.include_router(links_router)
 
+# Static directory
+STATIC_DIR = Path(__file__).parent / "static"
 
-@app.get("/", tags=["Root"])
+
+@app.get("/", response_class=HTMLResponse, tags=["Root"])
 async def root():
-    """Root endpoint with API information"""
+    """Serve the web UI"""
+    html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    return HTMLResponse(content=html)
+
+
+@app.get("/api", tags=["Root"])
+async def api_info():
+    """API info endpoint"""
     return {
         "message": "URL Shortener API",
         "docs": "/docs",
