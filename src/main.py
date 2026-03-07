@@ -51,7 +51,6 @@ app.include_router(
 
 # Main application routes
 app.include_router(links_router)
-app.include_router(redirect_router)
 
 
 @app.get("/", tags=["Root"])
@@ -68,6 +67,10 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
+
+
+# Register dynamic short-code redirect routes last
+app.include_router(redirect_router)
 
 
 if __name__ == "__main__":
