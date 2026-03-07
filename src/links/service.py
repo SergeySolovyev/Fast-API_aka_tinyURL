@@ -109,6 +109,23 @@ async def delete_expired_links(session: AsyncSession) -> int:
     return len(expired_links)
 
 
+async def delete_unused_links(session: AsyncSession, days: int) -> int:
+    """Delete links not used for `days` days and return count"""
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    # A link is "unused" if last_used_at < cutoff  OR  (never used AND created_at < cutoff)
+    result = await session.execute(
+        select(Link).where(
+            (Link.last_used_at < cutoff)
+            | ((Link.last_used_at.is_(None)) & (Link.created_at < cutoff))
+        )
+    )
+    unused_links = result.scalars().all()
+    for link in unused_links:
+        await session.delete(link)
+    await session.commit()
+    return len(unused_links)
+
+
 def build_short_url(short_code: str) -> str:
     """Build full short URL from code"""
     return f"{BASE_URL}/{short_code}"

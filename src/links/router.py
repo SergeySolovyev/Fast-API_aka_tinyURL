@@ -12,8 +12,11 @@ from src.links.service import (
     create_short_link,
     get_link_by_short_code,
     search_link_by_url,
+    delete_expired_links,
+    delete_unused_links,
     build_short_url
 )
+from src.config import UNUSED_LINKS_DAYS
 
 router = APIRouter(
     prefix="/links",
@@ -227,3 +230,28 @@ async def get_my_links(
         )
         for link in links
     ]
+
+
+@router.delete("/cleanup/expired")
+async def cleanup_expired(
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Delete all expired links.
+    Returns the number of deleted links.
+    """
+    count = await delete_expired_links(session)
+    return {"deleted": count, "message": f"{count} expired links removed"}
+
+
+@router.delete("/cleanup/unused")
+async def cleanup_unused(
+    days: int = UNUSED_LINKS_DAYS,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Delete links not used for N days.
+    N is configurable via query param (default from UNUSED_LINKS_DAYS env var = 90).
+    """
+    count = await delete_unused_links(session, days)
+    return {"deleted": count, "days_threshold": days, "message": f"{count} unused links removed"}

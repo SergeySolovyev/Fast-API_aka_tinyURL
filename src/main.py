@@ -1,26 +1,45 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 from pathlib import Path
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-from src.config import REDIS_URL, APP_HOST, APP_PORT
+from src.config import REDIS_URL, APP_HOST, APP_PORT, CLEANUP_INTERVAL_HOURS, UNUSED_LINKS_DAYS
 from src.auth.users import auth_backend, fastapi_users
 from src.auth.schemas import UserCreate, UserRead
 from src.cache import init_redis, close_redis
+from src.database import async_session_maker
+from src.links.service import delete_expired_links, delete_unused_links
 from src.links.router import router as links_router
 from src.redirect.router import router as redirect_router
 
 
+async def periodic_cleanup():
+    """Background task: clean up expired and unused links periodically"""
+    while True:
+        await asyncio.sleep(CLEANUP_INTERVAL_HOURS * 3600)
+        try:
+            async with async_session_maker() as session:
+                expired = await delete_expired_links(session)
+                unused = await delete_unused_links(session, UNUSED_LINKS_DAYS)
+                if expired or unused:
+                    print(f"🧹 Cleanup: {expired} expired, {unused} unused links removed")
+        except Exception as e:
+            print(f"⚠️ Cleanup error: {e}")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    """Initialize Redis cache on startup"""
+    """Initialize Redis cache and background tasks on startup"""
     await init_redis()
     print(f"✅ Redis connected: {REDIS_URL}")
+    cleanup_task = asyncio.create_task(periodic_cleanup())
     yield
+    cleanup_task.cancel()
     await close_redis()
 
 
