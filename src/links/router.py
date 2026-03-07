@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi_cache.decorator import cache
+from src.cache import delete_cache, get_cache, set_cache
 from src.database import get_async_session
 from src.auth.users import current_active_user, current_user_optional
 from src.auth.models import User
@@ -43,6 +43,7 @@ async def shorten_url(
             expires_at=link_data.expires_at,
             category=link_data.category
         )
+        await delete_cache(f"stats:{link.short_code}", f"redirect:{link.short_code}")
         
         return LinkResponse(
             id=link.id,
@@ -59,7 +60,6 @@ async def shorten_url(
 
 
 @router.get("/{short_code}/stats", response_model=LinkStats)
-@cache(expire=30)
 async def get_link_stats(
     short_code: str,
     session: AsyncSession = Depends(get_async_session)
@@ -68,6 +68,10 @@ async def get_link_stats(
     Get statistics for a shortened link
     - Cached for 30 seconds
     """
+    cached = await get_cache(f"stats:{short_code}")
+    if cached:
+        return LinkStats(**cached)
+
     link = await get_link_by_short_code(session, short_code)
     
     if not link:
@@ -75,8 +79,8 @@ async def get_link_stats(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Short link not found"
         )
-    
-    return LinkStats(
+
+    stats = LinkStats(
         short_code=link.short_code,
         original_url=link.original_url,
         created_at=link.created_at,
@@ -85,6 +89,9 @@ async def get_link_stats(
         last_used_at=link.last_used_at,
         category=link.category
     )
+
+    await set_cache(f"stats:{short_code}", stats.model_dump(mode="json"), expire=30)
+    return stats
 
 
 @router.delete("/{short_code}", status_code=status.HTTP_204_NO_CONTENT)
@@ -113,6 +120,7 @@ async def delete_link(
             detail="You can only delete your own links"
         )
     
+    await delete_cache(f"stats:{link.short_code}", f"redirect:{link.short_code}")
     await session.delete(link)
     await session.commit()
 
@@ -154,6 +162,7 @@ async def update_link(
     
     await session.commit()
     await session.refresh(link)
+    await delete_cache(f"stats:{link.short_code}", f"redirect:{link.short_code}")
     
     return LinkResponse(
         id=link.id,

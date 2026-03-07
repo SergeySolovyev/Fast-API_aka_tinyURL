@@ -2,14 +2,12 @@ from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from redis import asyncio as aioredis
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
 import uvicorn
 
 from src.config import REDIS_URL, APP_HOST, APP_PORT
 from src.auth.users import auth_backend, fastapi_users
 from src.auth.schemas import UserCreate, UserRead
+from src.cache import init_redis, close_redis
 from src.links.router import router as links_router
 from src.redirect.router import router as redirect_router
 
@@ -17,11 +15,10 @@ from src.redirect.router import router as redirect_router
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Initialize Redis cache on startup"""
-    redis = aioredis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    await init_redis()
     print(f"✅ Redis connected: {REDIS_URL}")
     yield
-    await redis.close()
+    await close_redis()
 
 
 app = FastAPI(
