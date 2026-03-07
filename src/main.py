@@ -25,8 +25,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="URL Shortener API",
-    description="A FastAPI service for shortening URLs with user authentication and analytics",
+    title="BTFL link API",
+    description="A FastAPI service for shortening URLs — beautiful links, fast and trackable",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -70,7 +70,7 @@ async def root():
 async def api_info():
     """API info endpoint"""
     return {
-        "message": "URL Shortener API",
+        "message": "BTFL link API",
         "docs": "/docs",
         "redoc": "/redoc"
     }

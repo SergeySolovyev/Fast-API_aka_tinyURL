@@ -1,4 +1,4 @@
-# URL Shortener API (FastAPI aka tinyURL)
+# BTFL link — URL Shortener API
 
 🔗 **Сервис сокращения ссылок** с аутентификацией, аналитикой и кэшированием.
 
