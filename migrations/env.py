@@ -19,7 +19,10 @@ config = context.config
 
 # Set the database URL
 sync_database_url = DATABASE_URL or f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Normalize to sync postgresql:// for Alembic (handles postgres://, postgresql+asyncpg://)
 sync_database_url = sync_database_url.replace("postgresql+asyncpg://", "postgresql://")
+if sync_database_url.startswith("postgres://"):
+    sync_database_url = sync_database_url.replace("postgres://", "postgresql://", 1)
 config.set_main_option("sqlalchemy.url", sync_database_url)
 
 # Interpret the config file for Python logging.

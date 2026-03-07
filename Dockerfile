@@ -17,8 +17,8 @@ COPY src/ ./src/
 COPY alembic.ini .
 COPY migrations/ ./migrations/
 
-# Expose port
-EXPOSE 8000
+# Expose port (Render sets PORT dynamically)
+EXPOSE 10000
 
-# Run the application
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run migrations then start the application
+CMD sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-10000}"
