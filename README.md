@@ -84,7 +84,7 @@ username=user@example.com&password=strongpassword
 
 ### 🔗 Работа со ссылками
 
-#### 1. Создание короткой ссылки (POST /links/shorten) ⭕
+#### 1. Создание короткой ссылки (POST /links/shorten)
 Доступно **всем пользователям** (анонимным и авторизованным).
 
 **Без кастомного alias:**
@@ -136,7 +136,7 @@ Content-Type: application/json
 
 ---
 
-#### 2. Переход по короткой ссылке (GET /{short_code}) ⭕
+#### 2. Переход по короткой ссылке (GET /{short_code})
 ```bash
 GET /aBc123
 ```
@@ -148,7 +148,7 @@ GET /aBc123
 
 ---
 
-#### 3. Статистика по ссылке (GET /links/{short_code}/stats) ⭕
+#### 3. Статистика по ссылке (GET /links/{short_code}/stats)
 ```bash
 GET /links/aBc123/stats
 ```
@@ -170,7 +170,7 @@ GET /links/aBc123/stats
 
 ---
 
-#### 4. Удаление ссылки (DELETE /links/{short_code}) ⭕
+#### 4. Удаление ссылки (DELETE /links/{short_code})
 Только для **авторизованных** пользователей. Можно удалять только свои ссылки.
 
 ```bash
@@ -182,7 +182,7 @@ Authorization: Bearer <token>
 
 ---
 
-#### 5. Обновление ссылки (PUT /links/{short_code}) ⭕
+#### 5. Обновление ссылки (PUT /links/{short_code})
 Только для **авторизованных** пользователей.
 
 ```bash
@@ -198,7 +198,7 @@ Content-Type: application/json
 
 ---
 
-#### 6. Поиск ссылки по URL (GET /links/search/by-url) ⭕
+#### 6. Поиск ссылки по URL (GET /links/search/by-url)
 ```bash
 GET /links/search/by-url?original_url=https://www.example.com/article
 ```
