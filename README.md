@@ -1,59 +1,54 @@
-# BTFL link — URL Shortener API
+﻿# URL Shortener API
 
-🔗 **Сервис сокращения ссылок** с аутентификацией, аналитикой и кэшированием.
+A FastAPI application for creating and managing shortened URLs, with user authentication, click statistics, and Redis caching.
 
-## 📋 Описание
+## Description
 
-FastAPI приложение для создания коротких ссылок, аналогичное [tinyURL](https://tinyurl.com) и [bitly](https://bitly.com/). 
+The service allows users to create short codes for arbitrary URLs. It supports anonymous and authenticated usage, optional custom aliases, expiration timestamps, per-link click statistics, and a background cleanup task.
 
-### Основные возможности:
-- ✅ Создание коротких ссылок (анонимно и для зарегистрированных пользователей)
-- ✅ Кастомные alias для ссылок
-- ✅ Установка времени жизни ссылок
-- ✅ Статистика переходов
-- ✅ Поиск ссылок по оригинальному URL
-- ✅ Система аутентификации (JWT)
-- ✅ Redis кэширование популярных ссылок
-- ✅ PostgreSQL для хранения данных
-- ✅ Автоматическая очистка истекших ссылок (фоновая задача)
-- ✅ Удаление неиспользуемых ссылок (настраиваемый порог N дней)
-- ✅ Веб-интерфейс (single-page app)
+Features:
+- Create short links (anonymous and authenticated users)
+- Optional custom alias per link
+- Optional expiration timestamp per link
+- Click count and last-used statistics
+- Search by original URL
+- JWT-based authentication via fastapi-users
+- Redis caching for redirect and stats endpoints
+- PostgreSQL for persistent storage
+- Background task for periodic cleanup of expired and unused links
+- Single-page web interface
 
----
+## Quick Start
 
-## 🚀 Быстрый старт
+### Running with Docker Compose
 
-### Локальный запуск с Docker Compose
-
-1. **Клонировать репозиторий:**
+1. Clone the repository:
 ```bash
 git clone https://github.com/SergeySolovyev/Fast-API_aka_tinyURL.git
 cd Fast-API_aka_tinyURL
 ```
 
-2. **Создать .env файл:**
+2. Create an environment file:
 ```bash
 cp .env.example .env
-# Отредактируйте .env и установите SECRET_KEY
+# Edit .env and set SECRET_KEY and other required values
 ```
 
-3. **Запустить с Docker Compose:**
+3. Start the application:
 ```bash
 docker-compose up --build
 ```
 
-4. **Приложение доступно:**
+4. Endpoints available at:
 - API: http://localhost:8000
-- Документация: http://localhost:8000/docs
+- Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
----
+## API Reference
 
-## 📚 API Документация
+### Authentication
 
-### 🔐 Аутентификация
-
-#### Регистрация пользователя
+**Register a user:**
 ```bash
 POST /auth/register
 Content-Type: application/json
@@ -64,7 +59,7 @@ Content-Type: application/json
 }
 ```
 
-#### Вход (получение JWT токена)
+**Obtain a JWT token:**
 ```bash
 POST /auth/jwt/login
 Content-Type: application/x-www-form-urlencoded
@@ -72,7 +67,7 @@ Content-Type: application/x-www-form-urlencoded
 username=user@example.com&password=strongpassword
 ```
 
-**Ответ:**
+Response:
 ```json
 {
   "access_token": "eyJhbGc...",
@@ -80,14 +75,13 @@ username=user@example.com&password=strongpassword
 }
 ```
 
----
+### Links
 
-### 🔗 Работа со ссылками
+**Create a shortened URL (POST /links/shorten)**
 
-#### 1. Создание короткой ссылки (POST /links/shorten)
-Доступно **всем пользователям** (анонимным и авторизованным).
+Available to both anonymous and authenticated users.
 
-**Без кастомного alias:**
+Without a custom alias:
 ```bash
 POST /links/shorten
 Content-Type: application/json
@@ -97,7 +91,7 @@ Content-Type: application/json
 }
 ```
 
-**С кастомным alias:**
+With a custom alias (requires authentication):
 ```bash
 POST /links/shorten
 Content-Type: application/json
@@ -109,7 +103,7 @@ Authorization: Bearer <token>
 }
 ```
 
-**С временем жизни:**
+With an expiration timestamp:
 ```bash
 POST /links/shorten
 Content-Type: application/json
@@ -120,7 +114,7 @@ Content-Type: application/json
 }
 ```
 
-**Ответ:**
+Response:
 ```json
 {
   "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -134,26 +128,18 @@ Content-Type: application/json
 }
 ```
 
----
-
-#### 2. Переход по короткой ссылке (GET /{short_code})
+**Redirect (GET /{short_code})**
 ```bash
 GET /aBc123
 ```
-Автоматически перенаправляет на оригинальный URL (HTTP 307).
+Returns HTTP 307. The redirect target is cached in Redis for 60 seconds. Click count is incremented on each access.
 
-- ✅ Кэшируется в Redis на 60 секунд
-- ✅ Инкрементирует счетчик переходов
-- ✅ Проверяет срок действия
-
----
-
-#### 3. Статистика по ссылке (GET /links/{short_code}/stats)
+**Link statistics (GET /links/{short_code}/stats)**
 ```bash
 GET /links/aBc123/stats
 ```
 
-**Ответ:**
+Response:
 ```json
 {
   "short_code": "aBc123",
@@ -165,26 +151,20 @@ GET /links/aBc123/stats
   "category": null
 }
 ```
+Cached for 30 seconds.
 
-- ✅ Кэшируется на 30 секунд
+**Delete a link (DELETE /links/{short_code})**
 
----
-
-#### 4. Удаление ссылки (DELETE /links/{short_code})
-Только для **авторизованных** пользователей. Можно удалять только свои ссылки.
-
+Requires authentication. Users can only delete their own links.
 ```bash
 DELETE /links/aBc123
 Authorization: Bearer <token>
 ```
+Returns HTTP 204 on success.
 
-**Ответ:** HTTP 204 No Content
+**Update a link (PUT /links/{short_code})**
 
----
-
-#### 5. Обновление ссылки (PUT /links/{short_code})
-Только для **авторизованных** пользователей.
-
+Requires authentication. Users can only update their own links.
 ```bash
 PUT /links/aBc123
 Authorization: Bearer <token>
@@ -196,207 +176,165 @@ Content-Type: application/json
 }
 ```
 
----
-
-#### 6. Поиск ссылки по URL (GET /links/search/by-url)
+**Search by original URL (GET /links/search/by-url)**
 ```bash
 GET /links/search/by-url?original_url=https://www.example.com/article
 ```
+Returns an array of links with the matching original URL.
 
-**Ответ:** массив ссылок с таким же original_url
+**List user links (GET /links/user/my-links)**
 
----
-
-### 📊 Дополнительные функции
-
-#### 7. Мои ссылки (GET /links/user/my-links)
-Список всех ссылок текущего пользователя.
-
+Requires authentication. Returns all links belonging to the current user.
 ```bash
 GET /links/user/my-links
 Authorization: Bearer <token>
 ```
 
----
+## Database Schema
 
-## 🗄️ Структура базы данных
+### Table: users
 
-### Таблица `users`
-| Поле | Тип | Описание |
-|------|-----|----------|
-| id | UUID | Primary key |
-| email | String | Уникальный email |
-| hashed_password | String | Хэш пароля |
-| registered_at | Timestamp | Дата регистрации |
-| is_active | Boolean | Активен ли пользователь |
-| is_superuser | Boolean | Суперпользователь |
-| is_verified | Boolean | Верифицирован ли email |
+| Column          | Type      | Description                    |
+|-----------------|-----------|--------------------------------|
+| id              | UUID      | Primary key                    |
+| email           | String    | Unique email address           |
+| hashed_password | String    | Hashed password                |
+| registered_at   | Timestamp | Registration timestamp         |
+| is_active       | Boolean   | Whether the account is active  |
+| is_superuser    | Boolean   | Superuser flag                 |
+| is_verified     | Boolean   | Email verification flag        |
 
-### Таблица `links`
-| Поле | Тип | Описание |
-|------|-----|----------|
-| id | UUID | Primary key |
-| short_code | String(50) | Короткий код (уникальный, индексируется) |
-| original_url | String(2048) | Оригинальный URL |
-| custom_alias | String(50) | Пользовательский alias (опционально) |
-| user_id | UUID | FK на users (NULL для анонимов) |
-| created_at | Timestamp | Дата создания |
-| expires_at | Timestamp | Срок действия (опционально) |
-| last_used_at | Timestamp | Последнее использование |
-| click_count | Integer | Счетчик переходов |
-| category | String(100) | Категория (опционально) |
+### Table: links
 
-**Индексы:**
-- `short_code` (уникальный)
-- `custom_alias` (уникальный)
-- `original_url`
-- `user_id`
-- Составной индекс `(user_id, created_at)`
+| Column       | Type         | Description                           |
+|--------------|--------------|---------------------------------------|
+| id           | UUID         | Primary key                           |
+| short_code   | String(50)   | Unique short code (indexed)           |
+| original_url | String(2048) | Target URL                            |
+| custom_alias | String(50)   | Optional user-defined alias           |
+| user_id      | UUID         | Foreign key to users (NULL for anon)  |
+| created_at   | Timestamp    | Creation timestamp                    |
+| expires_at   | Timestamp    | Optional expiration timestamp         |
+| last_used_at | Timestamp    | Last access timestamp                 |
+| click_count  | Integer      | Total redirect count                  |
+| category     | String(100)  | Optional category label               |
 
----
+Indexes: `short_code` (unique), `custom_alias` (unique), `original_url`, `user_id`, composite `(user_id, created_at)`.
 
-## 🛠️ Технологический стек
+## Technology Stack
 
-- **FastAPI** 0.115+ — веб-фреймворк
-- **SQLAlchemy** 2.0+ — ORM
-- **PostgreSQL** 16 — основная БД
-- **Redis** 7 — кэширование
-- **Alembic** — миграции БД
-- **fastapi-users** — готовая система аутентификации
-- **redis** (asyncio) — кэширование через собственный модуль `cache.py`
-- **Pydantic** — валидация данных
-- **asyncpg** — асинхронный драйвер PostgreSQL
-- **Docker & Docker Compose** — контейнеризация
+| Component      | Version / Notes                  |
+|----------------|----------------------------------|
+| FastAPI        | 0.115+                           |
+| SQLAlchemy     | 2.0+ (async)                     |
+| PostgreSQL     | 16                               |
+| Redis          | 7                                |
+| Alembic        | Database migrations              |
+| fastapi-users  | Authentication and JWT           |
+| Pydantic       | Request/response validation      |
+| asyncpg        | Async PostgreSQL driver          |
+| Docker Compose | Container orchestration          |
 
----
+## Environment Variables
 
-## 🧪 Примеры использования
+| Variable               | Description                   | Default               |
+|------------------------|-------------------------------|-----------------------|
+| DB_HOST                | PostgreSQL host               | localhost             |
+| DB_PORT                | PostgreSQL port               | 5432                  |
+| DB_NAME                | Database name                 | url_shortener         |
+| DB_USER                | Database user                 | postgres              |
+| DB_PASS                | Database password             | postgres              |
+| REDIS_HOST             | Redis host                    | localhost             |
+| REDIS_PORT             | Redis port                    | 6379                  |
+| SECRET_KEY             | JWT signing key               | (required)            |
+| BASE_URL               | Application base URL          | http://localhost:8000 |
+| UNUSED_LINKS_DAYS      | Cleanup threshold in days     | 90                    |
+| CLEANUP_INTERVAL_HOURS | Background cleanup interval   | 24                    |
 
-### Сценарий 1: Анонимное создание ссылки
-```bash
-# Создать короткую ссылку
-curl -X POST http://localhost:8000/links/shorten \
-  -H "Content-Type: application/json" \
-  -d '{"original_url": "https://github.com/SergeySolovyev"}'
+## Deployment on Render.com
 
-# Ответ: {"short_code": "xY7k2p", "short_url": "http://localhost:8000/xY7k2p", ...}
+1. Create a PostgreSQL instance (New > PostgreSQL). Copy the internal database URL.
+2. Create a Redis instance (New > Key Value Store). Copy the internal Redis URL.
+3. Create a Web Service (New > Web Service). Connect the GitHub repository.
+   - Runtime: Python 3
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port $PORT"`
+4. Set the following environment variables in the Web Service:
+   - `DATABASE_URL` - PostgreSQL internal URL
+   - `REDIS_URL` - Redis internal URL
+   - `SECRET_KEY` - a securely generated random string
+   - `BASE_URL` - the Render service URL
 
-# Перейти по ссылке
-curl -L http://localhost:8000/xY7k2p
-
-# Посмотреть статистику
-curl http://localhost:8000/links/xY7k2p/stats
-```
-
-### Сценарий 2: Создание кастомной ссылки с аутентификацией
-```bash
-# Зарегистрироваться
-curl -X POST http://localhost:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@test.com", "password": "test1234"}'
-
-# Войти
-TOKEN=$(curl -X POST http://localhost:8000/auth/jwt/login \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=test@test.com&password=test1234" | jq -r .access_token)
-
-# Создать ссылку с кастомным alias
-curl -X POST http://localhost:8000/links/shorten \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"original_url": "https://github.com", "custom_alias": "github"}'
-
-# Теперь доступна: http://localhost:8000/github
-```
-
----
-
-## 🔧 Переменные окружения
-
-| Переменная | Описание | По умолчанию |
-|-----------|----------|--------------|
-| `DB_HOST` | Хост PostgreSQL | localhost |
-| `DB_PORT` | Порт PostgreSQL | 5432 |
-| `DB_NAME` | Имя БД | url_shortener |
-| `DB_USER` | Пользователь БД | postgres |
-| `DB_PASS` | Пароль БД | postgres |
-| `REDIS_HOST` | Хост Redis | localhost |
-| `REDIS_PORT` | Порт Redis | 6379 |
-| `SECRET_KEY` | Секретный ключ для JWT | (обязательно изменить!) |
-| `BASE_URL` | Базовый URL приложения | http://localhost:8000 |
-
----
-
-## 📦 Развертывание на Render.com
-
-### 1. Создайте PostgreSQL базу
-В Render Dashboard:
-- New → PostgreSQL
-- Скопируйте `Internal Database URL`
-
-### 2. Создайте Redis (Key Value)
-- New → Key Value Store
-- Скопируйте `Internal Redis URL`
-
-### 3. Создайте Web Service
-- New → Web Service
-- Подключите GitHub репозиторий
-- Runtime: **Python 3**
-- Build Command: `pip install -r requirements.txt`
-- Start Command: `sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port $PORT"`
-
-### 4. Environment Variables
-Добавьте в Web Service:
-```
-DATABASE_URL=<postgres_internal_url>
-REDIS_URL=<redis_internal_url>
-SECRET_KEY=<ваш_секретный_ключ>
-BASE_URL=https://ваш-сервис.onrender.com
-```
-
----
-
-## 📁 Структура проекта
+## Project Structure
 
 ```
 .
-├── src/
-│   ├── auth/                   # Модуль аутентификации
-│   │   ├── models.py          # Модель User
-│   │   ├── schemas.py         # Pydantic схемы
-│   │   └── users.py           # Настройка fastapi-users
-│   ├── links/                  # Модуль ссылок
-│   │   ├── models.py          # Модель Link
-│   │   ├── schemas.py         # Pydantic схемы
-│   │   ├── service.py         # Бизнес-логика
-│   │   └── router.py          # API endpoints
-│   ├── redirect/               # Модуль переадресации
-│   │   └── router.py          # Endpoint для /{short_code}
-│   ├── config.py              # Конфигурация
-│   ├── database.py            # Подключение к БД
-│   └── main.py                # Точка входа FastAPI
-├── migrations/                 # Alembic миграции
-│   ├── versions/
-│   │   └── 001_database_creation.py
-│   └── env.py
-├── requirements.txt
-├── docker-compose.yml
-├── Dockerfile
-├── alembic.ini
-├── .env.example
-├── .gitignore
-└── README.md
++-- src/
+|   +-- auth/
+|   |   +-- models.py          User model
+|   |   +-- schemas.py         Pydantic schemas
+|   |   +-- users.py           fastapi-users configuration
+|   +-- links/
+|   |   +-- models.py          Link model
+|   |   +-- schemas.py         Pydantic schemas
+|   |   +-- service.py         Business logic
+|   |   +-- router.py          API endpoints
+|   +-- redirect/
+|   |   +-- router.py          Short-code redirect endpoint
+|   +-- config.py              Configuration
+|   +-- database.py            Database connection
+|   +-- main.py                Application entry point
++-- migrations/
+|   +-- versions/
+|   |   +-- 001_database_creation.py
+|   +-- env.py
++-- tests/
++-- requirements.txt
++-- docker-compose.yml
++-- Dockerfile
++-- alembic.ini
++-- .env.example
++-- .gitignore
++-- README.md
 ```
 
----
+## Testing
 
-## 👨‍💻 Автор
+PostgreSQL and Redis are not required for running tests. Database and cache dependencies are mocked.
 
-Sergey Solovyev  
-GitHub: [SergeySolovyev](https://github.com/SergeySolovyev)
+Install dependencies:
+```bash
+pip install -r requirements.txt
+pip install -r requirements-test.txt
+```
 
----
+Run tests:
+```bash
+pytest
+```
 
-## 📄 Лицензия
+Run with coverage (minimum threshold: 90%):
+```bash
+pytest --cov=src --cov-report=term-missing --cov-report=html --cov-fail-under=90
+```
+
+HTML coverage report: `htmlcov/index.html`
+
+Load testing with Locust:
+```bash
+locust -f locustfile.py -H http://localhost:8000
+```
+
+Headless mode:
+```bash
+locust -f locustfile.py --headless --users 20 --spawn-rate 2 -H http://localhost:8000 --run-time 30s
+```
+
+## License
 
 MIT License
+
+## Author
+
+Sergey Solovyev
+GitHub: https://github.com/SergeySolovyev

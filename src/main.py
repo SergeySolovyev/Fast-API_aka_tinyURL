@@ -27,16 +27,16 @@ async def periodic_cleanup():
                 expired = await delete_expired_links(session)
                 unused = await delete_unused_links(session, UNUSED_LINKS_DAYS)
                 if expired or unused:
-                    print(f"🧹 Cleanup: {expired} expired, {unused} unused links removed")
+                    print(f"Cleanup: {expired} expired, {unused} unused links removed")
         except Exception as e:
-            print(f"⚠️ Cleanup error: {e}")
+            print(f"Cleanup error: {e}")
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Initialize Redis cache and background tasks on startup"""
     await init_redis()
-    print(f"✅ Redis connected: {REDIS_URL}")
+    print(f"Redis connected: {REDIS_URL}")
     cleanup_task = asyncio.create_task(periodic_cleanup())
     yield
     cleanup_task.cancel()
@@ -44,8 +44,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="BTFL link API",
-    description="A FastAPI service for shortening URLs — beautiful links, fast and trackable",
+    title="URL Shortener API",
+    description="A FastAPI service for creating and managing shortened URLs.",
     version="1.0.0",
     lifespan=lifespan
 )

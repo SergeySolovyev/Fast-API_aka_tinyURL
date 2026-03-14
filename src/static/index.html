@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BTFL link — URL Shortener</title>
+<title>BTFL link - URL Shortener</title>
 <style>
   :root {
     --bg: #fafafa;
@@ -35,7 +35,7 @@
     min-height: 100vh;
   }
 
-  /* ── NAV ─────────────────────────────── */
+  /* -- NAV ------------------------------- */
   nav {
     position: sticky; top:0; z-index:100;
     display: flex; align-items: center; justify-content: space-between;
@@ -50,7 +50,7 @@
   .nav-actions { display: flex; gap: 10px; align-items: center; }
   .nav-user { font-size: 13px; color: var(--text-secondary); margin-right: 6px; }
 
-  /* ── BUTTONS ─────────────────────────── */
+  /* -- BUTTONS --------------------------- */
   .btn {
     display: inline-flex; align-items: center; justify-content: center;
     font: 400 14px/1 var(--font); letter-spacing: -.01em;
@@ -67,7 +67,7 @@
   .btn-sm { padding: 6px 14px; font-size: 13px; }
   .btn:disabled { opacity: .4; pointer-events: none; }
 
-  /* ── INPUTS ──────────────────────────── */
+  /* -- INPUTS ---------------------------- */
   .input-group { display: flex; flex-direction: column; gap: 6px; }
   .input-group label {
     font-size: 12px; font-weight: 500; color: var(--text-secondary);
@@ -90,14 +90,14 @@
   }
   input::placeholder { color: #c7c7cc; }
 
-  /* ── LAYOUT ──────────────────────────── */
+  /* -- LAYOUT ---------------------------- */
   .container {
     max-width: 680px;
     margin: 0 auto;
     padding: 48px 24px 80px;
   }
 
-  /* ── HERO ────────────────────────────── */
+  /* -- HERO ------------------------------ */
   .hero {
     text-align: center;
     margin-bottom: 44px;
@@ -113,7 +113,7 @@
     max-width: 420px; margin: 0 auto;
   }
 
-  /* ── CARD ────────────────────────────── */
+  /* -- CARD ------------------------------ */
   .card {
     background: var(--card);
     border-radius: var(--radius);
@@ -129,7 +129,7 @@
   }
   .card-form { display: flex; flex-direction: column; gap: 16px; }
 
-  /* ── SHORTEN RESULT ──────────────────── */
+  /* -- SHORTEN RESULT -------------------- */
   .result-box {
     display: none;
     background: #f5f5f7;
@@ -156,7 +156,7 @@
   }
   .copied-badge.show { opacity: 1; }
 
-  /* ── LINK LIST ───────────────────────── */
+  /* -- LINK LIST ------------------------- */
   .links-section { display: none; }
   .links-section.visible { display: block; }
   .link-item {
@@ -193,7 +193,7 @@
     text-transform: uppercase; letter-spacing: .04em;
   }
 
-  /* ── AUTH MODAL ──────────────────────── */
+  /* -- AUTH MODAL ------------------------ */
   .overlay {
     display: none; position: fixed; inset:0; z-index: 200;
     background: rgba(0,0,0,.4);
@@ -222,7 +222,7 @@
     color: var(--accent); text-decoration: none; font-weight: 500; cursor: pointer;
   }
 
-  /* ── ERROR / TOAST ───────────────────── */
+  /* -- ERROR / TOAST --------------------- */
   .toast {
     position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
     background: var(--text); color: #fff;
@@ -236,18 +236,18 @@
   .toast.show { opacity:1; pointer-events:auto; transform: translateX(-50%) translateY(0); }
   .toast.error { background: var(--danger); }
 
-  /* ── EXPAND ROW ──────────────────────── */
+  /* -- EXPAND ROW ------------------------ */
   .expand-row { display: none; padding: 12px 0 4px; animation: fadeUp .2s ease; }
   .expand-row.visible { display: block; }
   .expand-row .input-group { margin-bottom: 10px; }
 
-  /* ── ANIMATIONS ──────────────────────── */
+  /* -- ANIMATIONS ------------------------ */
   @keyframes fadeUp {
     from { opacity:0; transform:translateY(10px); }
     to { opacity:1; transform:translateY(0); }
   }
 
-  /* ── RESPONSIVE ──────────────────────── */
+  /* -- RESPONSIVE ------------------------ */
   @media (max-width: 520px) {
     nav { padding: 0 20px; }
     .container { padding: 32px 16px 60px; }
@@ -258,7 +258,7 @@
     .link-stats { gap: 10px; }
   }
 
-  /* ── SKELETON ─────────────────────────── */
+  /* -- SKELETON --------------------------- */
   .skeleton {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
@@ -284,7 +284,7 @@
 </head>
 <body>
 
-<!-- ── NAVIGATION ─────────────────────── -->
+<!-- -- NAVIGATION ----------------------- -->
 <nav>
   <div class="nav-brand">BTFL<span>link</span></div>
   <div class="nav-actions">
@@ -294,7 +294,7 @@
   </div>
 </nav>
 
-<!-- ── MAIN CONTENT ───────────────────── -->
+<!-- -- MAIN CONTENT --------------------- -->
 <div class="container">
 
   <!-- Hero -->
@@ -342,7 +342,7 @@
 
 </div>
 
-<!-- ── AUTH MODAL ──────────────────────── -->
+<!-- -- AUTH MODAL ------------------------ -->
 <div class="overlay" id="authOverlay" onclick="if(event.target===this)closeAuth()">
   <div class="modal">
     <!-- Login -->
@@ -355,7 +355,7 @@
         </div>
         <div class="input-group">
           <label>Password</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+          <input type="password" id="loginPassword" placeholder="" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
         <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
       </div>
@@ -380,7 +380,7 @@
   </div>
 </div>
 
-<!-- ── TOAST ───────────────────────────── -->
+<!-- -- TOAST ----------------------------- -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -388,13 +388,13 @@ const API = window.location.origin;
 let token = localStorage.getItem('token');
 let userEmail = localStorage.getItem('userEmail');
 
-// ── INIT ────────────────────────────────
+// -- INIT --------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   updateAuthUI();
   if (token) loadMyLinks();
 });
 
-// ── AUTH UI ─────────────────────────────
+// -- AUTH UI -----------------------------
 function updateAuthUI() {
   const btnAuth = document.getElementById('btnAuth');
   const btnLogout = document.getElementById('btnLogout');
@@ -424,7 +424,7 @@ function closeAuth() {
   document.getElementById('authOverlay').classList.remove('visible');
 }
 
-// ── LOGIN ───────────────────────────────
+// -- LOGIN -------------------------------
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
@@ -450,7 +450,7 @@ async function doLogin() {
   } catch (e) { toast(e.message, true); }
 }
 
-// ── REGISTER ────────────────────────────
+// -- REGISTER ----------------------------
 async function doRegister() {
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
@@ -468,14 +468,14 @@ async function doRegister() {
       const msg = e.detail === 'REGISTER_USER_ALREADY_EXISTS' ? 'Email already registered' : (e.detail?.reason || e.detail || 'Registration failed');
       throw new Error(msg);
     }
-    toast('Account created — signing in…');
+    toast('Account created - signing in…');
     document.getElementById('loginEmail').value = email;
     document.getElementById('loginPassword').value = password;
     await doLogin();
   } catch (e) { toast(e.message, true); }
 }
 
-// ── LOGOUT ──────────────────────────────
+// -- LOGOUT ------------------------------
 function logout() {
   token = null;
   userEmail = null;
@@ -486,7 +486,7 @@ function logout() {
   toast('Signed out');
 }
 
-// ── SHORTEN ─────────────────────────────
+// -- SHORTEN -----------------------------
 async function shortenUrl() {
   const url = document.getElementById('inputUrl').value.trim();
   if (!url) return toast('Enter a URL', true);
@@ -521,7 +521,7 @@ async function shortenUrl() {
   finally { btn.disabled = false; btn.textContent = 'Shorten'; }
 }
 
-// ── COPY ────────────────────────────────
+// -- COPY --------------------------------
 function copyResult() {
   const text = document.getElementById('resultUrl').textContent;
   navigator.clipboard.writeText(text);
@@ -530,7 +530,7 @@ function copyResult() {
   setTimeout(() => badge.classList.remove('show'), 1500);
 }
 
-// ── MY LINKS ────────────────────────────
+// -- MY LINKS ----------------------------
 async function loadMyLinks() {
   if (!token) return;
   const list = document.getElementById('linksList');
@@ -569,7 +569,7 @@ async function loadMyLinks() {
   }
 }
 
-// ── DELETE LINK ─────────────────────────
+// -- DELETE LINK -------------------------
 async function deleteLink(code) {
   if (!confirm('Delete this link?')) return;
   try {
@@ -585,7 +585,7 @@ async function deleteLink(code) {
   } catch (e) { toast(e.message, true); }
 }
 
-// ── TOAST ───────────────────────────────
+// -- TOAST -------------------------------
 let toastTimer;
 function toast(msg, isError) {
   const el = document.getElementById('toast');

@@ -33,5 +33,15 @@ build/
 .DS_Store
 Thumbs.db
 
-# Assignment notebook (course materials)
+# Assignment notebooks (course materials)
 FastAPI_project.ipynb
+FastAPI_testing(1).ipynb
+
+# Coverage data file (binary)
+.coverage
+
+# Local submission folder
+anytask_submission/
+
+# pytest cache
+.pytest_cache/
